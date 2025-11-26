@@ -5,5 +5,6 @@ export interface Job {
   location?: string;
   date?: string;
   salary?: string;
+  source?: 'InternList' | 'GitHub';
   link: string;
 }

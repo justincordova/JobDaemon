@@ -19,8 +19,14 @@ export async function notify(job: Job, isTest: boolean = false): Promise<void> {
 
   const prefix = isTest ? '[TEST] ' : '';
 
+  const sourceLabel = job.source ? `From ${job.source}` : 'Unknown Source';
+  
+  // Date formatting logic is handled by the scraper, but we can add context here if needed.
+  // InternList gives YYYY-MM-DD, GitHub gives "2d ago" style.
+  // We'll just display what we have, as requested.
+
   const content = [
-    `${prefix}**New Internship Opportunity!**`,
+    `${prefix}**New Internship Opportunity!** (${sourceLabel})`,
     `**Role:** ${job.title}`,
     `**Company:** ${job.company || 'N/A'}`,
     `**Location:** ${job.location || 'N/A'}`,

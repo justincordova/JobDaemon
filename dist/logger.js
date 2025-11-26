@@ -1,33 +1,18 @@
-export var LogLevel;
-(function (LogLevel) {
-    LogLevel["INFO"] = "INFO";
-    LogLevel["WARN"] = "WARN";
-    LogLevel["ERROR"] = "ERROR";
-})(LogLevel || (LogLevel = {}));
-class Logger {
-    log(level, message, ...args) {
-        const timestamp = new Date().toISOString();
-        const formattedMessage = `[${timestamp}] [${level}] ${message}`;
-        switch (level) {
-            case LogLevel.INFO:
-                console.log(formattedMessage, ...args);
-                break;
-            case LogLevel.WARN:
-                console.warn(formattedMessage, ...args);
-                break;
-            case LogLevel.ERROR:
-                console.error(formattedMessage, ...args);
-                break;
+import winston from 'winston';
+const { combine, timestamp, printf, colorize } = winston.format;
+export const logger = winston.createLogger({
+    level: 'info',
+    format: combine(timestamp({
+        format: 'YYYY-MM-DD HH:mm:ss',
+    }), colorize(), // Colorize the level
+    printf((info) => {
+        const { timestamp, level, message, ...meta } = info;
+        let log = `${timestamp} [${level}]: ${message}`;
+        // If there is metadata, print it on the next line formatted as JSON
+        if (Object.keys(meta).length > 0) {
+            log += `\n${JSON.stringify({ metadata: meta }, null, 2)}`;
         }
-    }
-    info(message, ...args) {
-        this.log(LogLevel.INFO, message, ...args);
-    }
-    warn(message, ...args) {
-        this.log(LogLevel.WARN, message, ...args);
-    }
-    error(message, ...args) {
-        this.log(LogLevel.ERROR, message, ...args);
-    }
-}
-export const logger = new Logger();
+        return log;
+    })),
+    transports: [new winston.transports.Console()],
+});

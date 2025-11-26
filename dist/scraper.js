@@ -1,34 +1,61 @@
 import axios from 'axios';
 import * as cheerio from 'cheerio';
 import { logger } from './logger.js';
+function isJobFresh(dateStr) {
+    if (!dateStr)
+        return false;
+    const today = new Date();
+    const todayStr = today.toISOString().split('T')[0]; // YYYY-MM-DD
+    // Check for InternList format (YYYY-MM-DD)
+    if (dateStr === todayStr) {
+        return true;
+    }
+    // Check for GitHub format (e.g., "0d", "14h", "now")
+    // We want to allow "0d", anything with "h" (hours), "m" (minutes), or "now"
+    const lowerDate = dateStr.toLowerCase();
+    if (lowerDate.includes('0d') ||
+        lowerDate.includes('h') ||
+        lowerDate.includes('m') ||
+        lowerDate.includes('now') ||
+        lowerDate.includes('today')) {
+        return true;
+    }
+    return false;
+}
 async function scrapeInternList() {
     try {
-        const { data } = await axios.get('https://www.intern-list.com/');
+        const { data } = await axios.get('https://www.intern-list.com/?k=swe');
         const $ = cheerio.load(data);
         const jobs = [];
-        // Note: The selector might need adjustment based on the actual site structure.
-        // Assuming a generic structure for now, but in a real scenario, we'd inspect the DOM.
-        // Since I cannot browse, I will use a generic approach that looks for links with keywords or common structures.
-        // However, for this task, I will try to be as robust as possible or use a broad selector.
-        // Let's assume standard list items or table rows.
-        // Inspecting the provided URL is not possible for me, so I will implement a best-effort scraper
-        // that looks for common job board patterns.
-        // NOTE: In a real-world scenario, I would inspect the page source.
-        // For this exercise, I will assume a structure or try to find links.
-        $('a').each((_, element) => {
-            const link = $(element).attr('href');
-            const title = $(element).text().trim();
-            if (link && title && (title.toLowerCase().includes('intern') || title.toLowerCase().includes('software'))) {
-                // Basic filtering to avoid garbage links
-                if (link.startsWith('http')) {
-                    jobs.push({
-                        id: link,
-                        title: title,
-                        link: link
-                    });
+        // The data is in a script tag as a JSON object.
+        const scriptTag = $('script[data-airtable-renderer-id="shrOTtndhc6HSgnYb"]').html();
+        if (scriptTag) {
+            const jsonData = JSON.parse(scriptTag);
+            const tableData = jsonData.tableData;
+            if (tableData && tableData.rows) {
+                for (const row of tableData.rows) {
+                    const cells = row.cells;
+                    const company = cells[0]?.text;
+                    const title = cells[1]?.text;
+                    const location = cells[2]?.text;
+                    const date = cells[3]?.text;
+                    const salary = cells[4]?.text;
+                    const link = cells[5]?.url;
+                    if (company && title && link && isJobFresh(date)) {
+                        jobs.push({
+                            id: link,
+                            title,
+                            company,
+                            location,
+                            date,
+                            salary,
+                            source: 'InternList',
+                            link,
+                        });
+                    }
                 }
             }
-        });
+        }
         return jobs;
     }
     catch (error) {
@@ -41,22 +68,27 @@ async function scrapeGitHubRepo(url) {
         const { data } = await axios.get(url);
         const $ = cheerio.load(data);
         const jobs = [];
-        // GitHub markdown tables usually render as <table>
         $('table tbody tr').each((_, row) => {
             const cols = $(row).find('td');
             if (cols.length >= 3) {
-                // Heuristic: Company Name is usually first or second, Role is usually second or third.
-                // Application Link is usually in the last column or specifically linked.
-                // Let's try to find the first link in the row that looks like an external job link.
                 const linkElement = $(row).find('a[href^="http"]').first();
                 const link = linkElement.attr('href');
-                const title = $(row).text().trim().replace(/\s+/g, ' '); // Flatten whitespace
                 if (link) {
-                    jobs.push({
-                        id: link,
-                        title: title, // This might be a bit messy, containing the whole row text, but ensures we capture info.
-                        link: link
-                    });
+                    const company = $(cols[0]).text().trim();
+                    const title = $(cols[1]).text().trim();
+                    const location = $(cols[2]).text().trim();
+                    const date = $(cols[4]).text().trim();
+                    if (isJobFresh(date)) {
+                        jobs.push({
+                            id: link,
+                            title: title,
+                            company: company,
+                            location: location,
+                            date: date,
+                            source: 'GitHub',
+                            link: link
+                        });
+                    }
                 }
             }
         });
@@ -75,10 +107,12 @@ export async function scrapeJobs() {
     jobs.push(...githubRepo1);
     const githubRepo2 = await scrapeGitHubRepo('https://github.com/vanshb03/Summer2026-Internships');
     jobs.push(...githubRepo2);
-    // Deduplicate by ID (link) just in case
+    // Deduplicate by ID (link)
     const uniqueJobs = new Map();
     for (const job of jobs) {
-        uniqueJobs.set(job.id, job);
+        if (job.link) {
+            uniqueJobs.set(job.link, job);
+        }
     }
     return Array.from(uniqueJobs.values());
 }

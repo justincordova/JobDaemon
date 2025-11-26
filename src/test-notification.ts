@@ -10,6 +10,7 @@ const testJob: Job = {
   location: 'Mountain View, CA',
   date: '2025-11-26',
   salary: '$50/hr',
+  source: 'InternList',
   link: 'https://www.google.com/about/careers/applications/jobs/results/123456',
 };
 
