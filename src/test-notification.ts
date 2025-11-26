@@ -1,23 +1,27 @@
 import 'dotenv/config';
 import { notify } from './notifier.js';
-import { Job } from './types.js';
+import { scrapeInternList } from './scraper.js';
 import { logger } from './logger.js';
 
-const testJob: Job = {
-  id: 'https://www.google.com/about/careers/applications/jobs/results/123456',
-  title: 'Software Engineering Intern, BS/MS, Summer 2026',
-  company: 'Google',
-  location: 'Mountain View, CA',
-  date: '2025-11-26',
-  salary: '$50/hr',
-  source: 'InternList',
-  link: 'https://www.google.com/about/careers/applications/jobs/results/123456',
-};
-
 async function runTest() {
-  logger.info('Sending test notification...');
-  await notify(testJob, true);
-  logger.info('Test notification sent. Check your Discord channel.');
+  try {
+    logger.info('Scraping jobs from InternList...');
+    const jobs = await scrapeInternList();
+
+    if (jobs.length === 0) {
+        logger.warn('No jobs found on InternList to test with.');
+        return;
+    }
+
+    const firstJob = jobs[0];
+    logger.info(`Found job: ${firstJob.title} at ${firstJob.company}`);
+    logger.info('Sending test notification...');
+    
+    await notify(firstJob, true);
+    logger.info('Test notification sent. Check your Discord channel.');
+  } catch (error) {
+    logger.error('Error running test notification:', error);
+  }
 }
 
 runTest();

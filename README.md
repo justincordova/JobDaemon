@@ -27,7 +27,15 @@ A background service to scrape and notify about new Software Engineering interns
     - Add your Discord Webhook URL:
       ```env
       DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/...
+      EMAIL_USER=your_email@gmail.com
+      EMAIL_PASS=your_app_password
       ```
+
+    **Email Configuration (Gmail):**
+    1. Go to your Google Account settings.
+    2. Navigate to Security > 2-Step Verification.
+    3. Scroll to the bottom and select "App passwords".
+    4. Generate a new app password for "Mail" and use it as `EMAIL_PASS`.
 
     **How to get a Discord Webhook URL:**
     1. Open Discord and go to your server settings.

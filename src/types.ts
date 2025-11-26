@@ -7,4 +7,5 @@ export interface Job {
   salary?: string;
   source?: 'InternList' | 'GitHub';
   link: string;
+  workModel?: string;
 }
