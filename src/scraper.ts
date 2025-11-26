@@ -48,15 +48,15 @@ export async function scrapeInternList(): Promise<Job[]> {
     // Set global timeout
     page.setDefaultNavigationTimeout(600000); // 10 minutes
 
-    // Optimize: Block images, fonts, styles
-    await page.setRequestInterception(true);
-    page.on('request', (req) => {
-      if (['image', 'stylesheet', 'font', 'media'].includes(req.resourceType())) {
-        req.abort();
-      } else {
-        req.continue();
-      }
-    });
+    // Optimize: Block images, fonts, styles - DISABLED
+    // await page.setRequestInterception(true);
+    // page.on('request', (req) => {
+    //   if (['image', 'stylesheet', 'font', 'media'].includes(req.resourceType())) {
+    //     req.abort();
+    //   } else {
+    //     req.continue();
+    //   }
+    // });
 
     await page.goto('https://www.intern-list.com/?k=swe', { 
       waitUntil: 'domcontentloaded',
@@ -75,8 +75,8 @@ export async function scrapeInternList(): Promise<Job[]> {
     // Wait for content to load inside the iframe
     await frame.waitForSelector('div.dataLeftPane');
 
-    // Click inside the iframe to ensure focus
-    await frame.click('div.dataLeftPane');
+    // Click inside the iframe to ensure focus - REMOVED
+    // await frame.click('div.dataLeftPane');
 
     const extractedJobs = await frame.evaluate(async () => {
         const jobs: any[] = [];
@@ -238,15 +238,15 @@ async function scrapeGitHubRepo(url: string): Promise<Job[]> {
     // Set global timeout
     page.setDefaultNavigationTimeout(600000); // 10 minutes
 
-    // Optimize: Block images, fonts, styles
-    await page.setRequestInterception(true);
-    page.on('request', (req) => {
-      if (['image', 'stylesheet', 'font', 'media'].includes(req.resourceType())) {
-        req.abort();
-      } else {
-        req.continue();
-      }
-    });
+    // Optimize: Block images, fonts, styles - DISABLED
+    // await page.setRequestInterception(true);
+    // page.on('request', (req) => {
+    //   if (['image', 'stylesheet', 'font', 'media'].includes(req.resourceType())) {
+    //     req.abort();
+    //   } else {
+    //     req.continue();
+    //   }
+    // });
 
     await page.goto(url, { 
       waitUntil: 'domcontentloaded',
