@@ -46,7 +46,7 @@ export async function scrapeInternList(): Promise<Job[]> {
     const page = await browser.newPage();
 
     // Set global timeout
-    page.setDefaultNavigationTimeout(60000);
+    page.setDefaultNavigationTimeout(600000); // 10 minutes
 
     // Optimize: Block images, fonts, styles
     await page.setRequestInterception(true);
@@ -236,7 +236,7 @@ async function scrapeGitHubRepo(url: string): Promise<Job[]> {
     const page = await browser.newPage();
 
     // Set global timeout
-    page.setDefaultNavigationTimeout(60000);
+    page.setDefaultNavigationTimeout(600000); // 10 minutes
 
     // Optimize: Block images, fonts, styles
     await page.setRequestInterception(true);
