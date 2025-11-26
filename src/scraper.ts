@@ -45,6 +45,9 @@ export async function scrapeInternList(): Promise<Job[]> {
     browser = await puppeteer.launch(launchOptions);
     const page = await browser.newPage();
 
+    // Set global timeout
+    page.setDefaultNavigationTimeout(60000);
+
     // Optimize: Block images, fonts, styles
     await page.setRequestInterception(true);
     page.on('request', (req) => {
@@ -56,8 +59,7 @@ export async function scrapeInternList(): Promise<Job[]> {
     });
 
     await page.goto('https://www.intern-list.com/?k=swe', { 
-      waitUntil: 'networkidle2',
-      timeout: 60000 // Increase timeout to 60s
+      waitUntil: 'domcontentloaded',
     });
 
     const iframeSelector = 'iframe[src*="airtable.com/embed"]';
@@ -233,6 +235,9 @@ async function scrapeGitHubRepo(url: string): Promise<Job[]> {
     browser = await puppeteer.launch(launchOptions);
     const page = await browser.newPage();
 
+    // Set global timeout
+    page.setDefaultNavigationTimeout(60000);
+
     // Optimize: Block images, fonts, styles
     await page.setRequestInterception(true);
     page.on('request', (req) => {
@@ -244,8 +249,7 @@ async function scrapeGitHubRepo(url: string): Promise<Job[]> {
     });
 
     await page.goto(url, { 
-      waitUntil: 'networkidle2',
-      timeout: 60000 // Increase timeout to 60s
+      waitUntil: 'domcontentloaded',
     });
 
     const extractedJobs = await page.evaluate(() => {
