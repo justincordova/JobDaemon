@@ -44,7 +44,21 @@ export async function scrapeInternList(): Promise<Job[]> {
     logger.info(`Launching puppeteer with options: ${JSON.stringify(launchOptions)}`);
     browser = await puppeteer.launch(launchOptions);
     const page = await browser.newPage();
-    await page.goto('https://www.intern-list.com/?k=swe', { waitUntil: 'networkidle2' });
+
+    // Optimize: Block images, fonts, styles
+    await page.setRequestInterception(true);
+    page.on('request', (req) => {
+      if (['image', 'stylesheet', 'font', 'media'].includes(req.resourceType())) {
+        req.abort();
+      } else {
+        req.continue();
+      }
+    });
+
+    await page.goto('https://www.intern-list.com/?k=swe', { 
+      waitUntil: 'networkidle2',
+      timeout: 60000 // Increase timeout to 60s
+    });
 
     const iframeSelector = 'iframe[src*="airtable.com/embed"]';
     await page.waitForSelector(iframeSelector);
@@ -218,7 +232,21 @@ async function scrapeGitHubRepo(url: string): Promise<Job[]> {
     logger.info(`Launching puppeteer with options: ${JSON.stringify(launchOptions)}`);
     browser = await puppeteer.launch(launchOptions);
     const page = await browser.newPage();
-    await page.goto(url, { waitUntil: 'networkidle2' });
+
+    // Optimize: Block images, fonts, styles
+    await page.setRequestInterception(true);
+    page.on('request', (req) => {
+      if (['image', 'stylesheet', 'font', 'media'].includes(req.resourceType())) {
+        req.abort();
+      } else {
+        req.continue();
+      }
+    });
+
+    await page.goto(url, { 
+      waitUntil: 'networkidle2',
+      timeout: 60000 // Increase timeout to 60s
+    });
 
     const extractedJobs = await page.evaluate(() => {
         const jobs: any[] = [];
