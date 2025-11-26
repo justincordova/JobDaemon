@@ -1,6 +1,38 @@
-import puppeteer from 'puppeteer';
+import puppeteer from 'puppeteer-core';
+import chromium from '@sparticuz/chromium';
 import { Job } from './types.js';
 import { logger } from './logger.js';
+import fs from 'fs';
+import os from 'os';
+
+function getLocalExecutablePath(): string | undefined {
+  if (process.env.PUPPETEER_EXECUTABLE_PATH) {
+    return process.env.PUPPETEER_EXECUTABLE_PATH;
+  }
+
+  const platform = os.platform();
+  
+  if (platform === 'darwin') {
+    const paths = [
+      '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+      '/Applications/Google Chrome Canary.app/Contents/MacOS/Google Chrome Canary',
+      '/Applications/Chromium.app/Contents/MacOS/Chromium',
+    ];
+    for (const p of paths) {
+      if (fs.existsSync(p)) return p;
+    }
+  } else if (platform === 'win32') {
+    const paths = [
+      'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+      'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
+    ];
+    for (const p of paths) {
+      if (fs.existsSync(p)) return p;
+    }
+  }
+  
+  return undefined;
+}
 
 function isJobFresh(dateStr: string | undefined): boolean {
   if (!dateStr) return false;
@@ -31,7 +63,25 @@ export async function scrapeInternList(): Promise<Job[]> {
   const jobs: Job[] = [];
   let browser;
   try {
-    browser = await puppeteer.launch({ headless: true });
+    let launchOptions: any;
+    const localExePath = getLocalExecutablePath();
+
+    if (localExePath) {
+      launchOptions = {
+        executablePath: localExePath,
+        headless: true,
+        args: ['--no-sandbox', '--disable-setuid-sandbox']
+      };
+    } else {
+      launchOptions = {
+        args: chromium.args,
+        defaultViewport: (chromium as any).defaultViewport || null,
+        executablePath: await chromium.executablePath(),
+        headless: (chromium as any).headless ?? true,
+      };
+    }
+
+    browser = await puppeteer.launch(launchOptions);
     const page = await browser.newPage();
     await page.goto('https://www.intern-list.com/?k=swe', { waitUntil: 'networkidle2' });
 
@@ -194,7 +244,25 @@ export async function scrapeInternList(): Promise<Job[]> {
 async function scrapeGitHubRepo(url: string): Promise<Job[]> {
   let browser;
   try {
-    browser = await puppeteer.launch({ headless: true });
+    let launchOptions: any;
+    const localExePath = getLocalExecutablePath();
+
+    if (localExePath) {
+      launchOptions = {
+        executablePath: localExePath,
+        headless: true,
+        args: ['--no-sandbox', '--disable-setuid-sandbox']
+      };
+    } else {
+      launchOptions = {
+        args: chromium.args,
+        defaultViewport: (chromium as any).defaultViewport || null,
+        executablePath: await chromium.executablePath(),
+        headless: (chromium as any).headless ?? true,
+      };
+    }
+
+    browser = await puppeteer.launch(launchOptions);
     const page = await browser.newPage();
     await page.goto(url, { waitUntil: 'networkidle2' });
 
