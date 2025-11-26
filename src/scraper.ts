@@ -1,5 +1,4 @@
-import puppeteer from 'puppeteer-core';
-import chromium from '@sparticuz/chromium';
+import puppeteer from 'puppeteer';
 import { Job } from './types.js';
 import { logger } from './logger.js';
 import fs from 'fs';
@@ -73,14 +72,18 @@ export async function scrapeInternList(): Promise<Job[]> {
         args: ['--no-sandbox', '--disable-setuid-sandbox']
       };
     } else {
+      logger.info('Using system chromium settings');
+      const exePath = process.env.CHROME_PATH || '/usr/bin/chromium';
+      logger.info(`System chromium executablePath: ${exePath}`);
+      
       launchOptions = {
-        args: chromium.args,
-        defaultViewport: (chromium as any).defaultViewport || null,
-        executablePath: await chromium.executablePath(),
-        headless: (chromium as any).headless ?? true,
+        executablePath: exePath,
+        headless: true,
+        args: ['--no-sandbox', '--disable-setuid-sandbox']
       };
     }
 
+    logger.info(`Launching puppeteer with options: ${JSON.stringify(launchOptions)}`);
     browser = await puppeteer.launch(launchOptions);
     const page = await browser.newPage();
     await page.goto('https://www.intern-list.com/?k=swe', { waitUntil: 'networkidle2' });
@@ -254,14 +257,18 @@ async function scrapeGitHubRepo(url: string): Promise<Job[]> {
         args: ['--no-sandbox', '--disable-setuid-sandbox']
       };
     } else {
+      logger.info('Using system chromium settings');
+      const exePath = process.env.CHROME_PATH || '/usr/bin/chromium';
+      logger.info(`System chromium executablePath: ${exePath}`);
+      
       launchOptions = {
-        args: chromium.args,
-        defaultViewport: (chromium as any).defaultViewport || null,
-        executablePath: await chromium.executablePath(),
-        headless: (chromium as any).headless ?? true,
+        executablePath: exePath,
+        headless: true,
+        args: ['--no-sandbox', '--disable-setuid-sandbox']
       };
     }
 
+    logger.info(`Launching puppeteer with options: ${JSON.stringify(launchOptions)}`);
     browser = await puppeteer.launch(launchOptions);
     const page = await browser.newPage();
     await page.goto(url, { waitUntil: 'networkidle2' });
