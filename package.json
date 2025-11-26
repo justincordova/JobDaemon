@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "node --no-deprecation --import ./loader.mjs src/index.ts",
-    "build": "tsc",
+    "build": "puppeteer browsers install chrome && tsc",
     "start": "node dist/index.js",
     "test:notify": "node --no-deprecation --import ./loader.mjs src/test-notification.ts",
     "clear-db": "rm jobs.db"

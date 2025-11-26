@@ -1,5 +1,4 @@
-import puppeteer from 'puppeteer-core';
-import chromium from '@sparticuz/chromium';
+import puppeteer from 'puppeteer';
 import { logger } from './logger.js';
 function isJobFresh(dateStr) {
     if (!dateStr)
@@ -26,12 +25,17 @@ export async function scrapeInternList() {
     const jobs = [];
     let browser;
     try {
-        browser = await puppeteer.launch({
-            args: chromium.args,
-            defaultViewport: chromium.defaultViewport || null,
-            executablePath: await chromium.executablePath(),
-            headless: chromium.headless ?? true,
-        });
+        const launchOptions = {
+            headless: true,
+            args: [
+                '--no-sandbox',
+                '--disable-setuid-sandbox',
+                '--disable-dev-shm-usage',
+                '--disable-gpu',
+            ],
+        };
+        logger.info(`Launching puppeteer with options: ${JSON.stringify(launchOptions)}`);
+        browser = await puppeteer.launch(launchOptions);
         const page = await browser.newPage();
         await page.goto('https://www.intern-list.com/?k=swe', { waitUntil: 'networkidle2' });
         const iframeSelector = 'iframe[src*="airtable.com/embed"]';
@@ -174,7 +178,17 @@ export async function scrapeInternList() {
 async function scrapeGitHubRepo(url) {
     let browser;
     try {
-        browser = await puppeteer.launch({ headless: true });
+        const launchOptions = {
+            headless: true,
+            args: [
+                '--no-sandbox',
+                '--disable-setuid-sandbox',
+                '--disable-dev-shm-usage',
+                '--disable-gpu',
+            ],
+        };
+        logger.info(`Launching puppeteer with options: ${JSON.stringify(launchOptions)}`);
+        browser = await puppeteer.launch(launchOptions);
         const page = await browser.newPage();
         await page.goto(url, { waitUntil: 'networkidle2' });
         const extractedJobs = await page.evaluate(() => {
