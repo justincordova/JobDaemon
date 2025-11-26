@@ -117,11 +117,13 @@ export async function scrapeJobs(): Promise<Job[]> {
   const internListJobs = await scrapeInternList();
   jobs.push(...internListJobs);
 
+  /*
   const githubRepo1 = await scrapeGitHubRepo('https://github.com/SimplifyJobs/Summer2026-Internships');
   jobs.push(...githubRepo1);
 
   const githubRepo2 = await scrapeGitHubRepo('https://github.com/vanshb03/Summer2026-Internships');
   jobs.push(...githubRepo2);
+  */
 
   // Deduplicate by ID (link)
   const uniqueJobs = new Map<string, Job>();
