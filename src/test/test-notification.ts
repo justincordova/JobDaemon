@@ -1,7 +1,7 @@
 import 'dotenv/config';
-import { notify } from './notifier.js';
-import { scrapeInternList } from './scraper.js';
-import { logger } from './logger.js';
+import { notify } from '../notifier.js';
+import { scrapeInternList } from '../scraper.js';
+import { logger } from '../logger.js';
 
 async function runTest() {
   try {

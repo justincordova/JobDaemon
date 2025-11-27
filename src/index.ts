@@ -1,4 +1,8 @@
 import 'dotenv/config';
+/**
+ * Entry point for the JobDaemon application.
+ * Initializes the scheduler and starts a simple HTTP server to keep the service alive on Render.
+ */
 import { startScheduler } from './scheduler.js';
 import { logger } from './logger.js';
 import http from 'http';

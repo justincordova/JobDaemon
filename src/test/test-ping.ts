@@ -1,7 +1,7 @@
 import 'dotenv/config';
-import { notify, sendPing } from './notifier.js';
-import { Job } from './types.js';
-import { logger } from './logger.js';
+import { notify, sendPing } from '../notifier.js';
+import { Job } from '../types.js';
+import { logger } from '../logger.js';
 
 async function main() {
     logger.info('Starting ping + notification test...');

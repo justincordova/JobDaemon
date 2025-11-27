@@ -1,3 +1,6 @@
+/**
+ * Represents a job posting.
+ */
 export interface Job {
   id: string;
   title: string;

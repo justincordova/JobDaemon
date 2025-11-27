@@ -1,13 +1,18 @@
 # JobDaemon
 
-A background service to scrape and notify about new Software Engineering internships.
+A robust background service to scrape and notify about new Software Engineering internships.
 
 ## Features
 
-- Scrapes `intern-list.com` and GitHub repositories for new listings.
-- Detects new postings and avoids duplicates using SQLite.
-- Sends Discord notifications for new jobs.
-- Runs automatically every 10 minutes.
+- **Reliable Scraping:** Downloads and parses the CSV export from `intern-list.com` to ensure all jobs are captured.
+- **Smart Filtering:** 
+  - Detects new postings and avoids duplicates using SQLite.
+  - Filters jobs to only include those posted "today".
+- **Rich Notifications:** 
+  - Sends formatted Discord notifications with clean links and metadata.
+  - Sends email summaries of new batches.
+- **Automated Scheduling:** Runs automatically every 10 minutes.
+- **Production Ready:** Includes a keep-alive HTTP server for Render deployment.
 
 ## Installation
 
@@ -23,32 +28,34 @@ A background service to scrape and notify about new Software Engineering interns
     ```
 
 3.  **Configure Environment:**
-    - Create a `.env` file in the root directory (or copy the example).
-    - Add your Discord Webhook URL:
-      ```env
-      DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/...
-      EMAIL_USER=your_email@gmail.com
-      EMAIL_PASS=your_app_password
-      ```
+    Create a `.env` file in the root directory:
+    ```env
+    # Discord Configuration
+    DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/...
 
-    **Email Configuration (Gmail):**
-    1. Go to your Google Account settings.
-    2. Navigate to Security > 2-Step Verification.
-    3. Scroll to the bottom and select "App passwords".
-    4. Generate a new app password for "Mail" and use it as `EMAIL_PASS`.
+    # Email Configuration (Gmail SMTP)
+    EMAIL_USER=your_email@gmail.com
+    EMAIL_PASS=your_app_password
+    EMAIL_TO=recipient@email.com
 
-    **How to get a Discord Webhook URL:**
-    1. Open Discord and go to your server settings.
-    2. Go to Integrations > Webhooks.
-    3. Click "New Webhook", select the channel, and copy the Webhook URL.
+    # Render / Production (Optional locally)
+    # PUPPETEER_CACHE_DIR=/opt/render/project/src/.cache/puppeteer
+    ```
 
 ## Usage
 
 ### Development Mode
-Run the service with `ts-node` (auto-restarts not configured by default, but useful for testing):
+Run the service locally with hot-reloading (if configured) or direct execution:
 ```bash
 npm run dev
 ```
+
+### Testing
+Run specific test scripts to verify functionality:
+- **Test Notification:** `npx tsx src/test/test-notification.ts`
+- **Test Email:** `npx tsx src/test/test-email.ts`
+- **Test Ping:** `npx tsx src/test/test-ping.ts`
+- **Test CSV Download:** `npx tsx src/test/test-download.ts`
 
 ### Production Build
 1.  **Build the project:**
@@ -61,10 +68,20 @@ npm run dev
     npm start
     ```
 
+## Deployment (Render)
+
+1.  **Build Command:** `npm install && npm run build`
+2.  **Start Command:** `npm start`
+3.  **Environment Variables:**
+    - Set `PUPPETEER_CACHE_DIR` to `/opt/render/project/src/.cache/puppeteer` to persist the browser binary.
+    - Set `PUPPETEER_SKIP_CHROMIUM_DOWNLOAD` to `true` if using a custom buildpack
+
 ## Project Structure
 
-- `src/scraper.ts`: Logic for fetching and parsing job data.
-- `src/notifier.ts`: Handles Discord webhook notifications.
-- `src/database.ts`: SQLite database operations.
-- `src/scheduler.ts`: Cron job configuration.
-- `src/index.ts`: Entry point.
+- `src/scraper.ts`: Logic for downloading and parsing the InternList CSV.
+- `src/notifier.ts`: Handles Discord webhook notifications and pings.
+- `src/email_notifier.ts`: Handles sending email summaries via Nodemailer.
+- `src/database.ts`: SQLite database operations with duplicate prevention.
+- `src/scheduler.ts`: Cron job configuration and orchestration.
+- `src/index.ts`: Entry point and HTTP server.
+- `src/test/`: Test scripts for individual components.

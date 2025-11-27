@@ -2,6 +2,12 @@ import axios from 'axios';
 import { Job } from './types.js';
 import { logger } from './logger.js';
 
+/**
+ * Sends a Discord notification for a specific job.
+ * Formats the job details into a rich embed.
+ * @param job The job to notify about.
+ * @param isTest Whether this is a test notification (adds a prefix).
+ */
 export async function notify(job: Job, isTest: boolean = false): Promise<void> {
   const webhookUrl = process.env.DISCORD_WEBHOOK_URL;
 
@@ -30,7 +36,7 @@ export async function notify(job: Job, isTest: boolean = false): Promise<void> {
 
     '⋆⁺₊⋆ ━━━━━━━━━━━━━━━━━━⊱༒︎ • ༒︎⊰━━━━━━━━━━━━━━━━━━ ⋆⁺₊⋆',
     '',
-    `${prefix}**New Internship Opportunity!** (${sourceLabel})`,
+    `${prefix}**New Internship** (${sourceLabel})`,
     `**Role:** ${job.title}`,
     `**Company:** ${job.company || 'N/A'}`,
     `**Location:** ${job.location || 'N/A'}`,
@@ -69,6 +75,10 @@ export async function notify(job: Job, isTest: boolean = false): Promise<void> {
   }
 }
 
+/**
+ * Sends a ping to @everyone in the Discord channel.
+ * Used to alert users when a batch of new jobs is found.
+ */
 export async function sendPing(): Promise<void> {
   const webhookUrl = process.env.DISCORD_WEBHOOK_URL;
   if (!webhookUrl) return;

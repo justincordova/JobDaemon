@@ -2,6 +2,11 @@ import winston from 'winston';
 
 const { combine, timestamp, printf, colorize } = winston.format;
 
+/**
+ * Custom Winston logger configuration.
+ * Formats logs with timestamps and colorized levels.
+ * Supports structured metadata logging.
+ */
 export const logger = winston.createLogger({
   level: 'info',
   format: combine(

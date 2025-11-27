@@ -2,14 +2,19 @@ import nodemailer from 'nodemailer';
 import { Job } from './types.js';
 import { logger } from './logger.js';
 
-export async function sendEmailSummary(jobs: Job[]) {
+/**
+ * Sends an email summary of new jobs found.
+ * Uses Nodemailer with Gmail SMTP.
+ * @param jobs The list of new jobs to include in the email.
+ */
+export async function sendEmailSummary(jobs: Job[]): Promise<void> {
   if (jobs.length === 0) return;
 
-  const user = process.env.EMAIL_USER;
-  const pass = process.env.EMAIL_PASS;
-  const recipient = 'justinavodroc@gmail.com';
+  const emailUser = process.env.EMAIL_USER;
+  const emailPass = process.env.EMAIL_PASS;
+  const emailTo = process.env.EMAIL_TO || 'justinavodroc@gmail.com';
 
-  if (!user || !pass) {
+  if (!emailUser || !emailPass) {
     logger.warn('EMAIL_USER or EMAIL_PASS not set. Skipping email summary.');
     return;
   }
@@ -17,8 +22,8 @@ export async function sendEmailSummary(jobs: Job[]) {
   const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
-      user,
-      pass,
+      user: emailUser,
+      pass: emailPass,
     },
   });
 
@@ -46,12 +51,12 @@ export async function sendEmailSummary(jobs: Job[]) {
 
   try {
     await transporter.sendMail({
-      from: `"JobDaemon" <${user}>`,
-      to: recipient,
+      from: `"JobDaemon" <${emailUser}>`,
+      to: emailTo,
       subject: `New Internships Found (${jobs.length})`,
       html,
     });
-    logger.info(`Email summary sent to ${recipient} with ${jobs.length} jobs.`);
+    logger.info(`Email summary sent to ${emailTo} with ${jobs.length} jobs.`);
   } catch (error) {
     logger.error('Error sending email summary:', error);
   }

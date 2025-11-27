@@ -1,7 +1,15 @@
 import puppeteer from 'puppeteer';
-import { Job } from './types.js';
 import { logger } from './logger.js';
+import { Job } from './types.js';
+import fs from 'fs';
+import path from 'path';
+import { parse } from 'csv-parse/sync';
 
+/**
+ * Checks if a job date string matches today's date.
+ * @param dateStr The date string to check (YYYY-MM-DD).
+ * @returns True if the date matches today, false otherwise.
+ */
 function isJobFresh(dateStr: string | undefined): boolean {
   if (!dateStr) return false;
   
@@ -27,6 +35,14 @@ function isJobFresh(dateStr: string | undefined): boolean {
   return false;
 }
 
+/**
+ * Scrapes jobs from InternList by downloading and parsing the CSV export.
+ * 1. Navigates to the InternList page.
+ * 2. Clicks the "Download CSV" button.
+ * 3. Downloads the file to .cache/downloads.
+ * 4. Parses the CSV, cleaning data and filtering for valid jobs.
+ * @returns A list of Job objects found in the CSV.
+ */
 export async function scrapeInternList(): Promise<Job[]> {
   const jobs: Job[] = [];
   let browser;
@@ -48,16 +64,6 @@ export async function scrapeInternList(): Promise<Job[]> {
     // Set global timeout
     page.setDefaultNavigationTimeout(600000); // 10 minutes
 
-    // Optimize: Block images, fonts, styles - DISABLED
-    // await page.setRequestInterception(true);
-    // page.on('request', (req) => {
-    //   if (['image', 'stylesheet', 'font', 'media'].includes(req.resourceType())) {
-    //     req.abort();
-    //   } else {
-    //     req.continue();
-    //   }
-    // });
-
     await page.goto('https://www.intern-list.com/?k=swe', { 
       waitUntil: 'domcontentloaded',
     });
@@ -66,148 +72,146 @@ export async function scrapeInternList(): Promise<Job[]> {
     await page.waitForSelector(iframeSelector);
     const frameElement = await page.$(iframeSelector);
     const frame = await frameElement?.contentFrame();
+    
+    if (frame) {
+      frame.on('console', (msg: any) => logger.info(`PAGE LOG: ${msg.text()}`));
+    }
 
     if (!frame) {
       logger.error('Could not retrieve iframe from InternList.');
       return [];
     }
 
-    // Wait for content to load inside the iframe
-    await frame.waitForSelector('div.dataLeftPane');
-
-    // Click inside the iframe to ensure focus - REMOVED
-    // await frame.click('div.dataLeftPane');
-
-    const extractedJobs = await frame.evaluate(async () => {
-        const jobs: any[] = [];
-        const seenIds = new Set<string>();
-        
-        const scrollableElement = document.querySelector('.antiscroll-inner');
-        if (!scrollableElement) {
-            console.log('Scrollable element .antiscroll-inner not found');
-            return [];
-        }
-
-        let previousScrollTop = -1;
-        let currentScrollTop = scrollableElement.scrollTop;
-        let attempts = 0;
-        const maxAttempts = 20; // Allow more attempts for PageDown
-
-        // We will use a loop that scrapes, then we return control to Node to press PageDown, 
-        // but since we are inside evaluate, we can't press keys.
-        // So we need to restructure: 
-        // 1. Loop in Node.js
-        // 2. Inside loop: scrape visible, then press PageDown
-        
-        return []; // Signal to Node to handle the loop
+    // Configure download behavior
+    const downloadPath = path.resolve(process.cwd(), '.cache', 'downloads');
+    if (!fs.existsSync(downloadPath)) {
+        fs.mkdirSync(downloadPath, { recursive: true });
+    }
+    
+    // @ts-ignore - setDownloadBehavior is not in the type definition but works
+    const client = await page.target().createCDPSession();
+    await client.send('Browser.setDownloadBehavior', {
+        behavior: 'allow',
+        downloadPath: downloadPath,
+        eventsEnabled: true // Optional, but good for debugging
     });
 
-    // New approach: Loop in Node.js
-    const allJobs: Job[] = [];
-    const seenIds = new Set<string>();
-    let noNewJobsAttempts = 0;
-
-    for (let i = 0; i < 30; i++) { // Max 30 pages
-        // Scrape visible jobs
-        const visibleJobs = await frame.evaluate(() => {
-            const jobs: any[] = [];
-            const leftPaneRows = document.querySelectorAll('div.dataLeftPane div.dataRow.leftPane');
-            const rightPaneRows = document.querySelectorAll('div.dataRightPane div.dataRow.rightPane');
-            const rightRowsArray = Array.from(rightPaneRows);
-
-            leftPaneRows.forEach((leftRow) => {
-                const rowId = leftRow.getAttribute('data-rowid');
-                if (!rowId) return;
-
-                const rightRow = rightRowsArray.find(r => r.getAttribute('data-rowid') === rowId);
-
-                if (rightRow) {
-                    const titleElement = leftRow.querySelector('div[data-columnid="fldiDLYrIz09i4roI"]');
-                    const companyElement = rightRow.querySelector('div[data-columnid="fldpdL6kzApwtHAAq"]');
-                    const locationElement = rightRow.querySelector('div[data-columnid="fldmj1wFCKqkrEtE8"]');
-                    const dateElement = rightRow.querySelector('div[data-columnid="fldgimpUNM7z3F3LZ"]');
-                    const salaryElement = rightRow.querySelector('div[data-columnid="fldrSZk70CyLKVajj"]');
-                    const workModelElement = rightRow.querySelector('div[data-columnid="fldNYDIFh6DbqMuQ3"]');
-                    const linkElement = rightRow.querySelector('div[data-columnid="fldyiaxKyYILOF7wH"] a');
-
-                    const title = titleElement?.textContent?.trim() || '';
-                    const company = companyElement?.textContent?.trim() || '';
-                    const location = locationElement?.textContent?.trim() || '';
-                    const date = dateElement?.textContent?.trim() || '';
-                    const salary = salaryElement?.textContent?.trim() || '';
-                    const workModel = workModelElement?.textContent?.trim() || '';
-                    let link = linkElement?.getAttribute('href') || '';
-
-                    // Clean link
-                    if (link) {
-                        try {
-                            const urlObj = new URL(link);
-                            urlObj.searchParams.delete('utm_campaign');
-                            urlObj.searchParams.delete('utm_source');
-                            link = urlObj.toString();
-                        } catch (e) {
-                            // Keep original link if parsing fails
-                        }
-                    }
-
-                    if (company && title && link) {
-                        jobs.push({
-                            id: link,
-                            title,
-                            company,
-                            location,
-                            date,
-                            salary,
-                            workModel,
-                            source: 'InternList',
-                            link
-                        });
+    // Find and click the Download CSV button
+    logger.info('Looking for Download CSV button...');
+    const downloadButtonXPath = '//div[text()="Download CSV"]';
+    await frame.waitForSelector(`xpath/${downloadButtonXPath}`);
+    const downloadButton = await frame.$(`xpath/${downloadButtonXPath}`);
+    
+    if (downloadButton) {
+        logger.info('Clicking Download CSV button...');
+        
+        // Try clicking with evaluate first
+        await frame.evaluate((el) => (el as HTMLElement).click(), downloadButton);
+        
+        // Wait for download to start
+        logger.info('Waiting for download...');
+        let downloadedFile: string | null = null;
+        
+        // Retry click if no file appears after 5 seconds
+        for (let attempt = 0; attempt < 3; attempt++) {
+            for (let i = 0; i < 10; i++) { // Wait 10 seconds per attempt
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                if (fs.existsSync(downloadPath)) {
+                    const files = fs.readdirSync(downloadPath);
+                    const csvFile = files.find(f => f.endsWith('.csv') && !f.endsWith('.crdownload'));
+                    if (csvFile) {
+                        downloadedFile = path.join(downloadPath, csvFile);
+                        break;
                     }
                 }
+            }
+            if (downloadedFile) break;
+            
+            logger.warn(`Download not started after attempt ${attempt + 1}. Retrying click...`);
+            await downloadButton.click(); // Fallback to standard click
+        }
+
+        if (downloadedFile) {
+            logger.info(`File downloaded: ${downloadedFile}`);
+            
+            // Read and parse CSV
+            let fileContent = fs.readFileSync(downloadedFile, 'utf-8');
+            // Remove BOM if present
+            fileContent = fileContent.replace(/^\uFEFF/, '');
+            
+            const records = parse(fileContent, {
+                columns: true,
+                skip_empty_lines: true
             });
-            return jobs;
-        });
 
-        let newJobsFound = 0;
-        for (const job of visibleJobs) {
-            if (!seenIds.has(job.id)) {
-                seenIds.add(job.id);
-                allJobs.push(job);
-                newJobsFound++;
+            logger.info(`Parsed ${records.length} records from CSV.`);
+
+            for (const record of records as any[]) {
+                // Map CSV fields to Job object
+                // CSV Format: Position Title, Date, Apply, Work Model, Location, Company, ...
+                
+                let dateStr = new Date().toISOString().split('T')[0]; // Default to today
+                if (record['Date']) {
+                    const rawDate = record['Date'];
+                    if (rawDate.includes('/')) {
+                        try {
+                            const [month, day, year] = rawDate.split('/');
+                            // Assuming year is 2 digits (e.g. 25), add 2000
+                            const fullYear = year.length === 2 ? '20' + year : year;
+                            dateStr = `${fullYear}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+                        } catch (e) {
+                            logger.warn(`Failed to parse date: ${rawDate}`);
+                        }
+                    } else if (rawDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                        dateStr = rawDate;
+                    } else {
+                         logger.warn(`Unknown date format: ${rawDate}`);
+                    }
+                }
+
+                const title = record['Position Title'] || record['Position'] || 'Unknown Title';
+                const company = record['Company'] || 'Unknown Company';
+                
+                if (title === 'Unknown Title') {
+                     logger.warn(`Missing title for record: ${JSON.stringify(record)}`);
+                }
+
+                // Clean link: remove any text after the first whitespace
+                let link = record['Apply'] || '';
+                if (link) {
+                    link = link.split(/\s+/)[0];
+                }
+
+                const job: Job = {
+                    id: link || (company + title), 
+                    title: title,
+                    company: company,
+                    location: record['Location'] || 'Unknown Location',
+                    link: link,
+                    date: dateStr,
+                    salary: record['Salary'] || 'N/A',
+                    workModel: record['Work Model'] || 'N/A',
+                    source: 'InternList'
+                };
+                
+                // Add to jobs list if valid and fresh
+                if (job.title !== 'Unknown Title' && job.company !== 'Unknown Company') {
+                    // Filter by date (only today's jobs)
+                    const todayStr = new Date().toISOString().split('T')[0];
+                    if (job.date === todayStr) {
+                        jobs.push(job);
+                    }
+                }
             }
-        }
 
-        // Check if we are scrolling
-        await frame.evaluate(() => {
-            const el = document.querySelector('.antiscroll-inner');
-            return el ? el.scrollTop : -1;
-        });
-
-        if (newJobsFound === 0) {
-            noNewJobsAttempts++;
-            if (noNewJobsAttempts >= 5) {
-                break; 
-            }
+            // Cleanup
+            fs.unlinkSync(downloadedFile);
+            logger.info('Cleaned up downloaded file.');
         } else {
-            noNewJobsAttempts = 0;
+            logger.error('Download timed out or file not found.');
         }
-
-        // Scroll down using evaluate
-        await frame.evaluate(() => {
-            const el = document.querySelector('.antiscroll-inner');
-            if (el) {
-                el.scrollBy(0, 500); // Scroll by 500px
-            }
-        });
-        await new Promise(resolve => setTimeout(resolve, 1500)); // Wait for load
-    }
-
-
-
-    for (const job of allJobs) {
-        if (isJobFresh(job.date)) {
-            jobs.push(job);
-        }
+    } else {
+        logger.error('Download CSV button not found.');
     }
 
   } catch (error) {
@@ -299,6 +303,11 @@ async function scrapeGitHubRepo(url: string): Promise<Job[]> {
   }
 }
 
+/**
+ * Main scraping function that aggregates jobs from all sources.
+ * Currently only scrapes InternList.
+ * @returns A combined list of unique Job objects.
+ */
 export async function scrapeJobs(): Promise<Job[]> {
   const jobs: Job[] = [];
 
