@@ -20,7 +20,9 @@ export async function sendEmailSummary(jobs: Job[]): Promise<void> {
   }
 
   const transporter = nodemailer.createTransport({
-    service: 'gmail',
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true, // true for 465, false for other ports
     auth: {
       user: emailUser,
       pass: emailPass,
