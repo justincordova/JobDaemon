@@ -23,30 +23,30 @@ export async function sendEmailSummary(jobs: Job[]): Promise<void> {
   const resend = new Resend(resendApiKey);
 
   const jobListHtml = jobs.map(job => `
-    <div style="background-color: #ffffff; border: 1px solid #e0e0e0; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-      <h3 style="margin: 0 0 12px 0; color: #1a1a1a; font-size: 18px; font-weight: 600;">${job.title}</h3>
+    <div style="background-color: #ffffff; border: 1px solid #e0e0e0; border-radius: 8px; padding: 20px; margin-bottom: 16px;">
+      <h3 style="margin: 0 0 12px 0; color: #111111; font-size: 18px; font-weight: 600; font-family: Helvetica, Arial, sans-serif;">${job.title}</h3>
       
-      <div style="display: grid; grid-template-columns: 1fr; gap: 8px; margin-bottom: 16px;">
-        <div style="display: flex; align-items: center; color: #4a4a4a; font-size: 14px;">
-          <span style="font-weight: 500; width: 80px; color: #666;">Company:</span>
-          <span>${job.company || 'N/A'}</span>
-        </div>
-        <div style="display: flex; align-items: center; color: #4a4a4a; font-size: 14px;">
-          <span style="font-weight: 500; width: 80px; color: #666;">Location:</span>
-          <span>${job.location || 'N/A'}</span>
-        </div>
-        <div style="display: flex; align-items: center; color: #4a4a4a; font-size: 14px;">
-          <span style="font-weight: 500; width: 80px; color: #666;">Type:</span>
-          <span>${job.workModel || 'N/A'}</span>
-        </div>
-        <div style="display: flex; align-items: center; color: #4a4a4a; font-size: 14px;">
-          <span style="font-weight: 500; width: 80px; color: #666;">Salary:</span>
-          <span>${job.salary || 'N/A'}</span>
-        </div>
-      </div>
+      <table role="presentation" border="0" cellpadding="0" cellspacing="0" style="width: 100%; margin-bottom: 16px;">
+        <tr>
+          <td style="padding-bottom: 4px; color: #555555; font-size: 14px; width: 80px; font-weight: bold;">Company:</td>
+          <td style="padding-bottom: 4px; color: #111111; font-size: 14px;">${job.company || 'N/A'}</td>
+        </tr>
+        <tr>
+          <td style="padding-bottom: 4px; color: #555555; font-size: 14px; width: 80px; font-weight: bold;">Location:</td>
+          <td style="padding-bottom: 4px; color: #111111; font-size: 14px;">${job.location || 'N/A'}</td>
+        </tr>
+        <tr>
+          <td style="padding-bottom: 4px; color: #555555; font-size: 14px; width: 80px; font-weight: bold;">Type:</td>
+          <td style="padding-bottom: 4px; color: #111111; font-size: 14px;">${job.workModel || 'N/A'}</td>
+        </tr>
+        <tr>
+          <td style="padding-bottom: 4px; color: #555555; font-size: 14px; width: 80px; font-weight: bold;">Salary:</td>
+          <td style="padding-bottom: 4px; color: #111111; font-size: 14px;">${job.salary || 'N/A'}</td>
+        </tr>
+      </table>
 
-      <a href="${job.link}" style="display: inline-block; background-color: #000000; color: #ffffff; padding: 10px 20px; text-decoration: none; border-radius: 6px; font-size: 14px; font-weight: 500; transition: background-color 0.2s;">
-        Apply Now &rarr;
+      <a href="${job.link}" target="_blank" style="display: inline-block; background-color: #007bff; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-size: 14px; font-weight: bold; text-align: center;">
+        Apply Now
       </a>
     </div>
   `).join('');
@@ -57,21 +57,22 @@ export async function sendEmailSummary(jobs: Job[]): Promise<void> {
       <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>New Job Postings</title>
       </head>
-      <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f5f5f5; color: #333;">
-        <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
+      <body style="margin: 0; padding: 0; font-family: Helvetica, Arial, sans-serif; background-color: #f4f4f4; color: #333333;">
+        <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
           
           <!-- Header -->
-          <div style="text-align: center; margin-bottom: 40px;">
-            <h1 style="margin: 0; color: #000; font-size: 24px; letter-spacing: -0.5px;">JobDaemon</h1>
-            <p style="margin: 8px 0 0 0; color: #666; font-size: 16px;">${jobs.length} new opportunities found</p>
+          <div style="text-align: center; margin-bottom: 30px; background-color: #ffffff; padding: 20px; border-radius: 8px; border: 1px solid #e0e0e0;">
+            <h1 style="margin: 0; color: #111111; font-size: 24px;">JobDaemon</h1>
+            <p style="margin: 8px 0 0 0; color: #666666; font-size: 16px;">${jobs.length} new opportunities found</p>
           </div>
 
           <!-- Job List -->
           ${jobListHtml}
 
           <!-- Footer -->
-          <div style="text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid #e0e0e0; color: #999; font-size: 12px;">
+          <div style="text-align: center; margin-top: 30px; color: #888888; font-size: 12px;">
             <p style="margin: 0;">Sent automatically by JobDaemon</p>
           </div>
           
