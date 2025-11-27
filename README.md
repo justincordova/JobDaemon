@@ -14,6 +14,14 @@ A robust background service to scrape and notify about new Software Engineering 
 - **Automated Scheduling:** Runs automatically every 10 minutes.
 - **Production Ready:** Includes a keep-alive HTTP server for Render deployment.
 
+## Screenshots
+
+### Discord Notifications
+![Discord Notifications](assets/ss0.png)
+
+### Email Summary
+![Email Summary](assets/ss1.png)
+
 ## Installation
 
 1.  **Clone the repository:**
@@ -33,10 +41,11 @@ A robust background service to scrape and notify about new Software Engineering 
     # Discord Configuration
     DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/...
 
-    # Email Configuration (Gmail SMTP)
-    EMAIL_USER=your_email@gmail.com
-    EMAIL_PASS=your_app_password
+    # Email Configuration (Resend)
+    RESEND_API_KEY=re_123456789
     EMAIL_TO=recipient@email.com
+    # Optional: Custom sender domain (default: onboarding@resend.dev)
+    # EMAIL_FROM=noreply@yourdomain.com
 
     # Render / Production (Optional locally)
     # PUPPETEER_CACHE_DIR=/opt/render/project/src/.cache/puppeteer
