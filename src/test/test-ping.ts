@@ -3,6 +3,10 @@ import { notify, sendPing } from '../notifier.js';
 import { Job } from '../types.js';
 import { logger } from '../logger.js';
 
+/**
+ * @deprecated This test is for the obsolete Discord notifier.
+ * Use test-email.ts instead for email notification testing.
+ */
 async function main() {
     logger.info('Starting ping + notification test...');
 

@@ -3,10 +3,16 @@ import { Job } from './types.js';
 import { logger } from './logger.js';
 
 /**
+ * @deprecated This module is obsolete and no longer used.
+ * Discord notifications have been replaced with email notifications via email_notifier.ts
+ */
+
+/**
  * Sends a Discord notification for a specific job.
  * Formats the job details into a rich embed.
  * @param job The job to notify about.
  * @param isTest Whether this is a test notification (adds a prefix).
+ * @deprecated Use email_notifier.ts instead
  */
 export async function notify(job: Job, isTest: boolean = false): Promise<void> {
   const webhookUrl = process.env.DISCORD_WEBHOOK_URL;
@@ -78,6 +84,7 @@ export async function notify(job: Job, isTest: boolean = false): Promise<void> {
 /**
  * Sends a ping to @everyone in the Discord channel.
  * Used to alert users when a batch of new jobs is found.
+ * @deprecated Use email_notifier.ts instead
  */
 export async function sendPing(): Promise<void> {
   const webhookUrl = process.env.DISCORD_WEBHOOK_URL;

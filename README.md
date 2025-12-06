@@ -8,16 +8,12 @@ A robust background service to scrape and notify about new Software Engineering 
 - **Smart Filtering:** 
   - Detects new postings and avoids duplicates using SQLite.
   - Filters jobs to only include those posted "today".
-- **Rich Notifications:** 
-  - Sends formatted Discord notifications with clean links and metadata.
-  - Sends email summaries of new batches.
+- **Rich Email Summaries:**
+  - Sends beautifully formatted email summaries with job details and direct apply links.
 - **Automated Scheduling:** Runs automatically every 10 minutes.
 - **Production Ready:** Includes a keep-alive HTTP server for Render deployment.
 
 ## Screenshots
-
-### Discord Notifications
-![Discord Notifications](assets/ss0.png)
 
 ### Email Summary
 ![Email Summary](assets/ss1.png)
@@ -38,9 +34,6 @@ A robust background service to scrape and notify about new Software Engineering 
 3.  **Configure Environment:**
     Create a `.env` file in the root directory:
     ```env
-    # Discord Configuration
-    DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/...
-
     # Email Configuration (Resend)
     RESEND_API_KEY=re_123456789
     EMAIL_TO=recipient@email.com
@@ -61,9 +54,7 @@ npm run dev
 
 ### Testing
 Run specific test scripts to verify functionality:
-- **Test Notification:** `npx tsx src/test/test-notification.ts`
 - **Test Email:** `npx tsx src/test/test-email.ts`
-- **Test Ping:** `npx tsx src/test/test-ping.ts`
 - **Test CSV Download:** `npx tsx src/test/test-download.ts`
 
 ### Production Build
@@ -88,9 +79,9 @@ Run specific test scripts to verify functionality:
 ## Project Structure
 
 - `src/scraper.ts`: Logic for downloading and parsing the InternList CSV.
-- `src/notifier.ts`: Handles Discord webhook notifications and pings.
-- `src/email_notifier.ts`: Handles sending email summaries via Nodemailer.
+- `src/email_notifier.ts`: Handles sending email summaries via Resend API.
 - `src/database.ts`: SQLite database operations with duplicate prevention.
 - `src/scheduler.ts`: Cron job configuration and orchestration.
 - `src/index.ts`: Entry point and HTTP server.
+- `src/notifier.ts`: **[DEPRECATED]** Legacy Discord notification module (no longer used).
 - `src/test/`: Test scripts for individual components.

@@ -3,6 +3,10 @@ import { notify } from '../notifier.js';
 import { scrapeInternList } from '../scraper.js';
 import { logger } from '../logger.js';
 
+/**
+ * @deprecated This test is for the obsolete Discord notifier.
+ * Use test-email.ts instead for email notification testing.
+ */
 async function runTest() {
   try {
     logger.info('Scraping jobs from InternList...');

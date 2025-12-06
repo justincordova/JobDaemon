@@ -1,7 +1,6 @@
 import cron from 'node-cron';
 import { scrapeJobs } from './scraper.js';
 import { hasJob, saveJob } from './database.js';
-import * as notify from './notifier.js';
 import { logger } from './logger.js';
 
 import { sendEmailSummary } from './email_notifier.js';
@@ -33,9 +32,6 @@ async function runScrape() {
     const jobsToNotify = jobs.filter(job => !hasJob(job.id));
 
     if (jobsToNotify.length > 0) {
-      // Send a single ping for the batch
-      await notify.sendPing();
-      
       for (const job of jobsToNotify) {
         saveJob(job);
         logger.info(`New job detected: ${job.title}`, {
@@ -47,14 +43,9 @@ async function runScrape() {
           salary: job.salary,
           link: job.link
         });
-        
-        // Send notification (without ping)
-        await notify.notify(job);
+
         newJobsCount++;
         newJobsList.push(job);
-        
-        // Wait 2 seconds between notifications to avoid Discord rate limits
-        await new Promise(resolve => setTimeout(resolve, 2000));
       }
     }
 
